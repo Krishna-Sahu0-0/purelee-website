@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Smart Purifier Portal – PureLee Water Purifiers</title>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=Open+Sans:wght@400;600&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="style.css"/>
+  <link rel="stylesheet" href="assets/css/smart-purifier.css"/>
+</head>
+<body>
+
+<!-- NAVBAR -->
+<nav>
+  <a href="index.html" class="nav-logo">PureLee</a>
+  <ul class="nav-links">
+    <li><a href="index.html">Home</a></li>
+    <li><a href="index.html#services">Service</a></li>
+    <li><a href="smart-purifier.html" class="nav-active">Smart Purifier</a></li>
+    <li><a href="tel:+917008804323">Contact Us</a></li>
+  </ul>
+</nav>
+
+<!-- PORTAL HEADER -->
+<div class="sp-hero-bar">
+  <div class="sp-hero-inner">
+    <div>
+      <h1>PURELEE Smart Water Purifier</h1>
+      <p>Live water quality, consumption analytics, filter life &amp; pump protection status</p>
+    </div>
+    <div id="heroOnlineBadge"></div>
+  </div>
+</div>
+
+<!-- MAIN PORTAL -->
+<main class="sp-main">
+  <div class="sp-container">
+
+    <div id="configWarning" class="sp-notice sp-hidden">
+      <strong>Setup Required:</strong> Update <code>assets/js/supabase-config.js</code> with your Supabase Project URL and public <code>anon</code> key to connect this portal.
+    </div>
+
+    <!-- AUTH VIEW -->
+    <section id="authSection" class="sp-auth-wrap sp-hidden">
+      <div class="sp-auth-tabs">
+        <button type="button" id="tabSignIn" class="sp-auth-tab active">Sign In</button>
+        <button type="button" id="tabSignUp" class="sp-auth-tab">Create Account</button>
+      </div>
+
+      <form id="authForm">
+        <div id="fullNameGroup" class="sp-field sp-hidden">
+          <label for="authFullName">Full Name</label>
+          <input type="text" id="authFullName" autocomplete="name" placeholder="Enter your name" />
+        </div>
+
+        <div class="sp-field">
+          <label for="authEmail">Email Address</label>
+          <input type="email" id="authEmail" required autocomplete="email" placeholder="you@example.com" />
+        </div>
+
+        <div class="sp-field">
+          <label for="authPassword">Password</label>
+          <input type="password" id="authPassword" required minlength="6" autocomplete="current-password" placeholder="Minimum 6 characters" />
+        </div>
+
+        <button type="submit" id="authSubmitBtn" class="sp-btn sp-btn-primary sp-btn-full">Sign In</button>
+        <div id="authMsg" class="sp-msg sp-hidden"></div>
+      </form>
+    </section>
+
+    <!-- DASHBOARD SECTION -->
+    <section id="dashboardSection" class="sp-hidden">
+
+      <!-- TOP BAR -->
+      <div class="sp-topbar">
+        <div class="sp-user-info">
+          Signed in as <strong id="userEmailLabel">--</strong>
+        </div>
+        <div class="sp-topbar-actions">
+          <div id="deviceSelectWrap" class="sp-device-select-wrap sp-hidden">
+            <select id="deviceSelect" class="sp-select" aria-label="Select Purifier"></select>
+          </div>
+          <button type="button" id="openClaimBtn" class="sp-btn sp-btn-primary">+ Add Purifier</button>
+          <button type="button" id="signOutBtn" class="sp-btn sp-btn-outline">Sign Out</button>
+        </div>
+      </div>
+
+      <!-- EMPTY STATE -->
+      <div id="emptyDeviceState" class="sp-card sp-empty sp-hidden">
+        <h3>No Purifier Connected Yet</h3>
+        <p>Click <strong>+ Add Purifier</strong> and enter the Device ID and Claim Code printed on your PURELEE Smart Purifier card or QR label to view live readings.</p>
+        <button type="button" id="emptyAddBtn" class="sp-btn sp-btn-primary">+ Add Your Purifier</button>
+      </div>
+
+      <!-- ACTIVE DEVICE CONTENT -->
+      <div id="deviceContent" class="sp-hidden">
+
+        <!-- DEVICE HEADER -->
+        <div class="sp-device-header">
+          <div>
+            <div class="sp-device-title" id="devTitle">PURELEE Smart Purifier</div>
+            <div class="sp-device-meta">
+              Device ID: <strong id="devIdLabel">--</strong>
+              &nbsp;&bull;&nbsp;
+              Firmware: <span id="devFwLabel">--</span>
+              &nbsp;&bull;&nbsp;
+              Last Seen: <span id="devLastSeen">--</span>
+            </div>
+          </div>
+          <div class="sp-badge-group">
+            <span id="connBadge" class="sp-badge sp-badge-neutral">Checking...</span>
+          </div>
+        </div>
+
+        <!-- SEPARATE ALERT BANNERS -->
+        <div id="alertsContainer" class="sp-alerts"></div>
+
+        <!-- CONSUMPTION KPIs -->
+        <div class="sp-kpi-grid">
+          <div class="sp-card">
+            <div class="sp-card-label">Total Consumed</div>
+            <div class="sp-kpi-val" id="kpiTotal">-- L</div>
+            <div class="sp-kpi-sub">Lifetime purified</div>
+          </div>
+          <div class="sp-card">
+            <div class="sp-card-label">Today (IST)</div>
+            <div class="sp-kpi-val" id="kpiToday">-- L</div>
+            <div class="sp-kpi-sub">Resets midnight IST</div>
+          </div>
+          <div class="sp-card">
+            <div class="sp-card-label">Last 7 Days</div>
+            <div class="sp-kpi-val" id="kpiWeek">-- L</div>
+            <div class="sp-kpi-sub">Weekly usage</div>
+          </div>
+          <div class="sp-card">
+            <div class="sp-card-label">Last 30 Days</div>
+            <div class="sp-kpi-val" id="kpiMonth">-- L</div>
+            <div class="sp-kpi-sub">Monthly usage</div>
+          </div>
+          <div class="sp-card">
+            <div class="sp-card-label">Flow Rate</div>
+            <div class="sp-kpi-val" id="kpiFlow">-- L/min</div>
+            <div class="sp-kpi-sub">Live dispensing rate</div>
+          </div>
+        </div>
+
+        <!-- TDS & PUMP STATUS -->
+        <div class="sp-two-col">
+          <div class="sp-card">
+            <div class="sp-card-label">TDS Water Quality</div>
+            <div class="sp-status-val" id="tdsValue">-- ppm</div>
+            <div id="tdsStatusText" class="sp-kpi-sub">--</div>
+            <div id="tdsRecoveryText" class="sp-kpi-sub" style="margin-top:6px;"></div>
+          </div>
+
+          <div class="sp-card">
+            <div class="sp-card-label">Pump &amp; Protection Status</div>
+            <div class="sp-status-val" id="pumpStatusValue">--</div>
+            <div id="pumpStatusDesc" class="sp-kpi-sub">--</div>
+          </div>
+        </div>
+
+        <!-- FILTER LIFE -->
+        <div class="sp-three-col">
+          <div class="sp-card">
+            <div class="sp-filter-head">
+              <div class="sp-card-label" style="margin:0;">Pre-filter (3,500 L)</div>
+              <span class="sp-filter-pct" id="prePct">--%</span>
+            </div>
+            <div class="sp-kpi-val" id="preRem">-- L</div>
+            <div class="sp-bar-track"><div class="sp-bar-fill" id="preBar"></div></div>
+            <div class="sp-filter-note" id="preNote">--</div>
+          </div>
+
+          <div class="sp-card">
+            <div class="sp-filter-head">
+              <div class="sp-card-label" style="margin:0;">Sediment + Pre/Post Carbon (7,000 L)</div>
+              <span class="sp-filter-pct" id="groupPct">--%</span>
+            </div>
+            <div class="sp-kpi-val" id="groupRem">-- L</div>
+            <div class="sp-bar-track"><div class="sp-bar-fill" id="groupBar"></div></div>
+            <div class="sp-filter-note" id="groupNote">--</div>
+          </div>
+
+          <div class="sp-card">
+            <div class="sp-filter-head">
+              <div class="sp-card-label" style="margin:0;">UV Service Reminder (7,000 L)</div>
+              <span class="sp-filter-pct" id="uvPct">--%</span>
+            </div>
+            <div class="sp-kpi-val" id="uvRem">-- L</div>
+            <div class="sp-bar-track"><div class="sp-bar-fill" id="uvBar"></div></div>
+            <div class="sp-filter-note" id="uvNote">--</div>
+          </div>
+        </div>
+
+        <!-- CHARTS -->
+        <div class="sp-two-col">
+          <div class="sp-card">
+            <div class="sp-card-label">Daily Water Usage (Last 14 Days, IST)</div>
+            <div class="sp-chart-box">
+              <canvas id="usageChart"></canvas>
+            </div>
+          </div>
+
+          <div class="sp-card">
+            <div class="sp-card-label">Recent TDS &amp; Flow Trend</div>
+            <div class="sp-chart-box">
+              <canvas id="tdsChart"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <!-- SERVICE EVENTS (READ-ONLY) -->
+        <div class="sp-card">
+          <div class="sp-card-label">Service &amp; Maintenance Log</div>
+          <ul id="eventsList" class="sp-events-list">
+            <li><span class="sp-kpi-sub">Loading service history...</span></li>
+          </ul>
+        </div>
+
+      </div>
+    </section>
+
+  </div>
+</main>
+
+<!-- ADD PURIFIER MODAL -->
+<div id="claimModal" class="sp-modal-backdrop sp-hidden" role="dialog" aria-modal="true" aria-labelledby="claimModalTitle">
+  <div class="sp-modal">
+    <div class="sp-modal-header">
+      <h3 id="claimModalTitle">Add Your PURELEE Purifier</h3>
+      <button type="button" id="closeClaimBtn" class="sp-close-btn" aria-label="Close">&times;</button>
+    </div>
+
+    <div id="qrScannerBox" class="sp-qr-box sp-hidden">
+      <video id="qrVideo" class="sp-qr-video" playsinline muted></video>
+      <div class="sp-kpi-sub" style="margin-top:6px;">Point camera at the PURELEE QR sticker</div>
+      <button type="button" id="stopScanBtn" class="sp-btn sp-btn-outline" style="margin-top:8px;">Stop Camera</button>
+    </div>
+
+    <form id="claimForm">
+      <div class="sp-field">
+        <label for="claimDeviceId">Device ID</label>
+        <input type="text" id="claimDeviceId" required placeholder="e.g. PL-RO-DEV-0001" />
+      </div>
+
+      <div class="sp-field">
+        <label for="claimCode">Claim Code</label>
+        <input type="text" id="claimCode" required placeholder="e.g. PURE-2026" />
+      </div>
+
+      <div class="sp-field">
+        <label for="claimNickname">Purifier Location / Name (Optional)</label>
+        <input type="text" id="claimNickname" maxlength="60" placeholder="e.g. Kitchen RO Purifier" />
+      </div>
+
+      <div style="display:flex;gap:10px;flex-wrap:wrap;">
+        <button type="submit" id="claimSubmitBtn" class="sp-btn sp-btn-primary" style="flex:1;">Connect Purifier</button>
+        <button type="button" id="scanQrBtn" class="sp-btn sp-btn-outline sp-hidden">Scan QR</button>
+      </div>
+
+      <div id="claimMsg" class="sp-msg sp-hidden"></div>
+    </form>
+  </div>
+</div>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-grid">
+    <div class="footer-logo-area">
+      <div class="footer-brand-box">
+        <div>
+          <div class="footer-brand-name">Pure<span>Lee</span> <sup style="font-size:9px;color:#999;">TM</sup></div>
+          <div class="footer-tagline">Water Purifiers</div>
+        </div>
+      </div>
+      <p class="footer-payment">Payment Options</p>
+      <div class="payment-icons">
+        <span class="pay-icon">VISA</span>
+        <span class="pay-icon">MC</span>
+        <span class="pay-icon">NET</span>
+        <span class="pay-icon">UPI</span>
+      </div>
+    </div>
+
+    <div class="footer-col">
+      <h4>Address</h4>
+      <p>Ngo Tower Square, Near Big Bazar Road,<br/>Berhampur, Odisha</p>
+      <br/>
+      <a href="tel:+917008804323" class="footer-phone">Phone: +91 7008804323</a>
+    </div>
+
+    <div class="footer-col">
+      <h4>Special Offer</h4>
+      <div class="footer-promo">
+        Register now for the first time and get 1 free RO Spare filter.
+      </div>
+    </div>
+  </div>
+
+  <div class="footer-bottom">
+    * Terms and conditions apply &nbsp;|&nbsp; &copy; 2026 PureLee Water Purifiers. All rights reserved.
+  </div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<script src="assets/js/supabase-config.js"></script>
+<script src="assets/js/purifier-app.js"></script>
+</body>
+</html>

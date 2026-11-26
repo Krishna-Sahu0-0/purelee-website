@@ -3,7 +3,10 @@
 
   const OFFLINE_THRESHOLD_SEC = 900; // 15 minutes (3 missed 5-min heartbeats)
   const PRE_LIMIT_L = 3500;
-  const GROUP_LIMIT_L = 7000;
+  const SEDIMENT_LIMIT_L = 6000;
+  const PRECARBON_LIMIT_L = 6000;
+  const POSTCARBON_LIMIT_L = 6500;
+  const UF_LIMIT_L = 6500;
   const UV_LIMIT_L = 7000;
 
   const cfg = window.PURELEE_SUPABASE_CONFIG || {};
@@ -57,10 +60,22 @@
     preRem: document.getElementById("preRem"),
     preBar: document.getElementById("preBar"),
     preNote: document.getElementById("preNote"),
-    groupPct: document.getElementById("groupPct"),
-    groupRem: document.getElementById("groupRem"),
-    groupBar: document.getElementById("groupBar"),
-    groupNote: document.getElementById("groupNote"),
+    sedPct: document.getElementById("sedPct"),
+    sedRem: document.getElementById("sedRem"),
+    sedBar: document.getElementById("sedBar"),
+    sedNote: document.getElementById("sedNote"),
+    preCarbPct: document.getElementById("preCarbPct"),
+    preCarbRem: document.getElementById("preCarbRem"),
+    preCarbBar: document.getElementById("preCarbBar"),
+    preCarbNote: document.getElementById("preCarbNote"),
+    postCarbPct: document.getElementById("postCarbPct"),
+    postCarbRem: document.getElementById("postCarbRem"),
+    postCarbBar: document.getElementById("postCarbBar"),
+    postCarbNote: document.getElementById("postCarbNote"),
+    ufPct: document.getElementById("ufPct"),
+    ufRem: document.getElementById("ufRem"),
+    ufBar: document.getElementById("ufBar"),
+    ufNote: document.getElementById("ufNote"),
     uvPct: document.getElementById("uvPct"),
     uvRem: document.getElementById("uvRem"),
     uvBar: document.getElementById("uvBar"),
@@ -230,7 +245,29 @@
         createAlertElement(
           "critical",
           "Device Offline",
-          "No heartbeat received in the last 15 minutes. Check purifier power and home Wi-Fi. Local TDS and filter protection remain active on the unit."
+          "No heartbeat received in the last 15 minutes. Check purifier power and home Wi-Fi. Local UV service lock and monitoring remain active on the unit."
+        )
+      );
+    }
+
+    if (t && (t.uv_expired || t.uv_due)) {
+      count++;
+      els.alertsContainer.appendChild(
+        createAlertElement(
+          "critical",
+          "UV Filter Limit Reached (7,000 L) \u2014 Pump Stopped",
+          "UV filter capacity has reached 7,000 L. Machine is locked (Red LED solid ON) until serviced by PURELEE."
+        )
+      );
+    }
+
+    if (t && (t.tds_fault || Number(t.tds_ppm || 0) > 500)) {
+      count++;
+      els.alertsContainer.appendChild(
+        createAlertElement(
+          "warning",
+          "High TDS Warning (> 500 ppm) \u2014 Red LED Blinking \u2014 Pump Running",
+          "Measured TDS exceeded 500 ppm. Red service LED is blinking while the purifier continues running; schedule a service check."
         )
       );
     }
@@ -239,33 +276,9 @@
       count++;
       els.alertsContainer.appendChild(
         createAlertElement(
-          "critical",
-          "TDS Sensor Problem \u2014 Pump Stopped",
-          "TDS probe signal is outside valid bounds (0.015 V \u2013 2.60 V). Pump is locked OFF for safety until inspected."
-        )
-      );
-    }
-
-    if (t && t.tds_fault) {
-      count++;
-      const msg =
-        t.tds_ppm < 500 && !t.tds_sensor_fault
-          ? "TDS has dropped below 500 ppm. Auto-recovery stability check: " +
-            (t.tds_recovery_sec || 0) +
-            " / 60 seconds."
-          : "Measured TDS reached 500 ppm or higher. Pump is stopped until water stays below 500 ppm continuously for 60 seconds.";
-      els.alertsContainer.appendChild(
-        createAlertElement("critical", "High TDS Fault \u2014 Pump Stopped", msg)
-      );
-    }
-
-    if (t && t.group_expired) {
-      count++;
-      els.alertsContainer.appendChild(
-        createAlertElement(
-          "critical",
-          "Combined Filter Replacement Due (7,000 L) \u2014 Pump Locked",
-          "Sediment, Pre-carbon, and Post-carbon cartridge capacity reached 7,000 L. Contact PURELEE service for replacement."
+          "warning",
+          "TDS Sensor Probe Warning \u2014 Red LED Blinking \u2014 Pump Running",
+          "TDS probe voltage is outside valid bounds (0.015 V \u2013 2.60 V). Red LED is blinking; pump continues running."
         )
       );
     }
@@ -275,19 +288,52 @@
       els.alertsContainer.appendChild(
         createAlertElement(
           "warning",
-          "Pre-filter Replacement Due (3,500 L)",
-          "Pre-filter life has reached 3,500 L. Purifier continues running, please schedule pre-filter replacement soon."
+          "Pre-Filter Replacement Due (3,500 L)",
+          "Pre-filter has reached 3,500 L (Red LED blinking). Purifier continues running; schedule pre-filter replacement."
         )
       );
     }
 
-    if (t && t.uv_due) {
+    if (t && t.sediment_expired) {
       count++;
       els.alertsContainer.appendChild(
         createAlertElement(
           "warning",
-          "UV Service Reminder (7,000 L)",
-          "7,000 L UV service interval reached. Purifier continues running; schedule a UV inspection with PURELEE."
+          "Sediment Filter Replacement Due (6,000 L)",
+          "Sediment filter has reached 6,000 L (Red LED blinking). Purifier continues running; schedule replacement."
+        )
+      );
+    }
+
+    if (t && t.pre_carbon_expired) {
+      count++;
+      els.alertsContainer.appendChild(
+        createAlertElement(
+          "warning",
+          "Pre-Carbon Filter Replacement Due (6,000 L)",
+          "Pre-Carbon filter has reached 6,000 L (Red LED blinking). Purifier continues running; schedule replacement."
+        )
+      );
+    }
+
+    if (t && t.post_carbon_expired) {
+      count++;
+      els.alertsContainer.appendChild(
+        createAlertElement(
+          "warning",
+          "Post-Carbon Filter Replacement Due (6,500 L)",
+          "Post-Carbon filter has reached 6,500 L (Red LED blinking). Purifier continues running; schedule replacement."
+        )
+      );
+    }
+
+    if (t && t.uf_expired) {
+      count++;
+      els.alertsContainer.appendChild(
+        createAlertElement(
+          "warning",
+          "UF Membrane Replacement Due (6,500 L)",
+          "UF membrane has reached 6,500 L (Red LED blinking). Purifier continues running; schedule replacement."
         )
       );
     }
@@ -298,7 +344,7 @@
         createAlertElement(
           "warning",
           "Unexpected Flow Detected",
-          "Water flow was detected while the pump was commanded OFF. Contact PURELEE service if this persists."
+          "Water flow was detected while the pump was commanded OFF (Red LED blinking). Contact PURELEE service if this persists."
         )
       );
     }
@@ -308,7 +354,7 @@
         createAlertElement(
           "ok",
           "All Systems Normal",
-          "Water quality, filter life, and pump protection checks are within normal operating limits."
+          "Water quality, all 6 filter stages, and pump operation are within normal operating limits."
         )
       );
     }
@@ -392,36 +438,32 @@
 
     // TDS card
     els.tdsValue.textContent = Number(t.tds_ppm || 0).toFixed(0) + " ppm";
+    const highTdsWarn = Boolean(t.tds_fault) || (!t.tds_sensor_fault && Number(t.tds_ppm || 0) > 500);
+
     if (t.tds_sensor_fault) {
-      els.tdsValue.className = "sp-status-val sp-status-bad";
-      els.tdsStatusText.textContent = "Sensor fault detected (check probe)";
-      els.tdsRecoveryText.textContent = "";
-    } else if (t.tds_fault) {
-      els.tdsValue.className = "sp-status-val sp-status-bad";
-      els.tdsStatusText.textContent = "High TDS protection active (>= 500 ppm)";
-      els.tdsRecoveryText.textContent =
-        t.tds_ppm < 500
-          ? "60 s recovery progress: " + (t.tds_recovery_sec || 0) + " / 60 s"
-          : "Waiting for TDS to drop below 500 ppm";
+      els.tdsValue.className = "sp-status-val sp-status-warn";
+      els.tdsStatusText.textContent = "TDS Sensor Warning (Red LED Blinking \u2014 Pump Running)";
+      els.tdsRecoveryText.textContent = "Probe voltage outside 0.015 V \u2013 2.60 V bounds";
+    } else if (highTdsWarn) {
+      els.tdsValue.className = "sp-status-val sp-status-warn";
+      els.tdsStatusText.textContent = "High TDS Warning (> 500 ppm) \u2014 Red LED Blinking \u2014 Pump Running";
+      els.tdsRecoveryText.textContent = "Purifier remains operational; service check recommended";
     } else {
       els.tdsValue.className = "sp-status-val sp-status-good";
-      els.tdsStatusText.textContent = "Within operating limit (< 500 ppm)";
+      els.tdsStatusText.textContent = "Within operating limit (<= 500 ppm)";
       els.tdsRecoveryText.textContent = "";
     }
 
     // Pump card
+    const uvLocked = Boolean(t.uv_expired || t.uv_due);
     if (!online) {
       els.pumpStatusValue.className = "sp-status-val sp-status-warn";
       els.pumpStatusValue.textContent = "Offline";
       els.pumpStatusDesc.textContent = "Last reported state before disconnect: " + (t.pump_running ? "Running" : "Stopped");
-    } else if (t.tds_fault || t.tds_sensor_fault) {
+    } else if (uvLocked) {
       els.pumpStatusValue.className = "sp-status-val sp-status-bad";
-      els.pumpStatusValue.textContent = "TDS Protection Active";
-      els.pumpStatusDesc.textContent = "Pump stopped automatically to protect drinking water quality";
-    } else if (t.group_expired) {
-      els.pumpStatusValue.className = "sp-status-val sp-status-bad";
-      els.pumpStatusValue.textContent = "Filter Lock Active";
-      els.pumpStatusDesc.textContent = "Pump stopped until combined filter group is serviced";
+      els.pumpStatusValue.textContent = "UV Filter Lock Active";
+      els.pumpStatusDesc.textContent = "Pump stopped at 7,000 L UV filter limit (Red LED solid ON)";
     } else if (t.startup_hold) {
       els.pumpStatusValue.className = "sp-status-val sp-status-warn";
       els.pumpStatusValue.textContent = "Boot Stabilizing";
@@ -429,7 +471,9 @@
     } else if (t.pump_running) {
       els.pumpStatusValue.className = "sp-status-val sp-status-good";
       els.pumpStatusValue.textContent = "Pump Running";
-      els.pumpStatusDesc.textContent = "Normal purification enabled";
+      els.pumpStatusDesc.textContent = highTdsWarn
+        ? "Running with High TDS Warning (Red LED blinking)"
+        : "Normal purification enabled";
     } else {
       els.pumpStatusValue.className = "sp-status-val sp-status-warn";
       els.pumpStatusValue.textContent = "Pump Stopped";
@@ -444,18 +488,51 @@
       t.pre_remaining_l,
       PRE_LIMIT_L,
       t.pre_expired,
-      "Pre-filter due (pump continues running)"
+      "Pre-filter due (Red LED blinking \u2014 pump continues)"
     );
 
     updateFilterCard(
-      els.groupRem,
-      els.groupPct,
-      els.groupBar,
-      els.groupNote,
-      t.group_remaining_l,
-      GROUP_LIMIT_L,
-      t.group_expired,
-      "Combined group expired \u2014 service lock active"
+      els.sedRem,
+      els.sedPct,
+      els.sedBar,
+      els.sedNote,
+      t.sediment_rem_l ?? SEDIMENT_LIMIT_L,
+      SEDIMENT_LIMIT_L,
+      t.sediment_expired,
+      "Sediment filter due (Red LED blinking \u2014 pump continues)"
+    );
+
+    updateFilterCard(
+      els.preCarbRem,
+      els.preCarbPct,
+      els.preCarbBar,
+      els.preCarbNote,
+      t.pre_carbon_rem_l ?? PRECARBON_LIMIT_L,
+      PRECARBON_LIMIT_L,
+      t.pre_carbon_expired,
+      "Pre-Carbon due (Red LED blinking \u2014 pump continues)"
+    );
+
+    updateFilterCard(
+      els.postCarbRem,
+      els.postCarbPct,
+      els.postCarbBar,
+      els.postCarbNote,
+      t.post_carbon_rem_l ?? POSTCARBON_LIMIT_L,
+      POSTCARBON_LIMIT_L,
+      t.post_carbon_expired,
+      "Post-Carbon due (Red LED blinking \u2014 pump continues)"
+    );
+
+    updateFilterCard(
+      els.ufRem,
+      els.ufPct,
+      els.ufBar,
+      els.ufNote,
+      t.uf_rem_l ?? UF_LIMIT_L,
+      UF_LIMIT_L,
+      t.uf_expired,
+      "UF Membrane due (Red LED blinking \u2014 pump continues)"
     );
 
     updateFilterCard(
@@ -465,8 +542,8 @@
       els.uvNote,
       t.uv_remaining_l,
       UV_LIMIT_L,
-      t.uv_due,
-      "UV service reminder due (litre-based)"
+      uvLocked,
+      "UV Filter limit reached \u2014 machine locked (Red LED solid ON)"
     );
   }
 
